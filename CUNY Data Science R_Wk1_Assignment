@@ -1,0 +1,24 @@
+#1: 12-factorial
+
+factor <- 1
+for(i in 1:12) {
+    factor = factor * i
+}
+print(factor)
+
+#2: Vector
+
+num <- seq(20,50,by=5)
+print(num)
+
+# another solution 
+# num <- c(4:10) * 5
+
+#3: Quadratic Formula
+
+factorial <- function(a, b, c){
+    pos_root <- (-b) + sqrt((b^2) - 4 * a * c) / (2*a)
+    neg_root <- (-b) - sqrt((b^2) - 4 * a * c) / (2*a)
+    print(pos_root)
+    print(neg_root)
+  }
