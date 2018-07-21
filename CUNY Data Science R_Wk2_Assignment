@@ -1,0 +1,19 @@
+urlfile<-'https://raw.github.com/vincentarelbundock/Rdatasets/master/csv/carData/Salaries.csv'
+dsin<-read.csv(urlfile)
+
+library(plyr)
+dsin_sub <- dsin[,c("yrs.service", "salary")]
+dsin_sub <- rename(dsin_sub, c(yrs.service="Yrs",salary="Pay")) 
+summary(dsin_sub)
+apply(dsin_sub, 2, mean))
+apply(dsin_sub, 2, median)
+
+order.Pay <- order(dsin_sub$Pay,decreasing = TRUE)
+dsin_top20 <- head(dsin_sub[order.Pay,],20)
+
+summary(dsin_top20)
+apply(dsin_top20, 2, mean)
+apply(dsin_top20, 2, median)
+
+dsin_top20$Pay[dsin_top20$Pay > 200000] <- "200K-plus"
+print(dsin_top20)
