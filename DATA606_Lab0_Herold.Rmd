@@ -1,0 +1,116 @@
+---
+title: "DATA 606 Lab0_Herold"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+# DATA606 - Lab0 by Zachary Herold
+
+
+## Arbuthnot Data
+
+### EXERCISE1:  What command would you use to extract just the counts of girls baptized? Try it!   
+
+ANSWER: arbuthnot$girls
+
+```{r}
+require(RCurl)
+arbuthnot <- data.frame(read.csv(text = getURL("https://raw.githubusercontent.com/ZacharyHerold/chinafundnews/master/arbuthnot.csv")))
+arbuthnot$girls
+```
+
+
+### EXERCISE2: Is there an apparent trend in the number of girls baptized over the years?  How would you describe it?
+
+ANSWER: The trend is generally upward with a quick recovery following the 1640-1660 bottom
+
+```{r total girls}
+plot(x = arbuthnot$year, y = arbuthnot$girls, type = "l")
+```
+
+### EXERCISE3.  Now, make a plot of the proportion of boys over time. What do you see? 
+
+ANSWER: The proportion wavers, but is always north of 50%, with a slight downward trend in the mean.
+
+```{r}
+arbuthnot$boyratio <- arbuthnot$boys / (arbuthnot$boys + arbuthnot$girls)
+plot(x = arbuthnot$year, y = arbuthnot$boyratio, type = "l")
+```
+
+
+## Present-Day Data
+
+These data come from a report by the Centers for Disease Control 
+[http://www.cdc.gov/nchs/data/nvsr/nvsr53/nvsr53_20.pdf]
+
+
+```{r}
+present <-
+  structure(list(year = c(1940, 1941, 1942, 1943, 1944, 1945, 1946, 
+                          1947, 1948, 1949, 1950, 1951, 1952, 1953, 1954, 1955, 1956, 1957, 
+                          1958, 1959, 1960, 1961, 1962, 1963, 1964, 1965, 1966, 1967, 1968, 
+                          1969, 1970, 1971, 1972, 1973, 1974, 1975, 1976, 1977, 1978, 1979, 
+                          1980, 1981, 1982, 1983, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 
+                          1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 
+                          2002), boys = c(1211684, 1289734, 1444365, 1508959, 1435301, 
+                                          1404587, 1691220, 1899876, 1813852, 1826352, 1823555, 1923020, 
+                                          1971262, 2001798, 2059068, 2073719, 2133588, 2179960, 2152546, 
+                                          2173638, 2179708, 2186274, 2132466, 2101632, 2060162, 1927054, 
+                                          1845862, 1803388, 1796326, 1846572, 1915378, 1822910, 1669927, 
+                                          1608326, 1622114, 1613135, 1624436, 1705916, 1709394, 1791267, 
+                                          1852616, 1860272, 1885676, 1865553, 1879490, 1927983, 1924868, 
+                                          1951153, 2002424, 2069490, 2129495, 2101518, 2082097, 2048861, 
+                                          2022589, 1996355, 1990480, 1985596, 2016205, 2026854, 2076969, 
+                                          2057922, 2057979), girls = c(1148715, 1223693, 1364631, 1427901, 
+                                                                       1359499, 1330869, 1597452, 1800064, 1721216, 1733177, 1730594, 
+                                                                       1827830, 1875724, 1900322, 1958294, 1973576, 2029502, 2074824, 
+                                                                       2051266, 2071158, 2078142, 2082052, 2034896, 1996388, 1967328, 
+                                                                       1833304, 1760412, 1717571, 1705238, 1753634, 1816008, 1733060, 
+                                                                       1588484, 1528639, 1537844, 1531063, 1543352, 1620716, 1623885, 
+                                                                       1703131, 1759642, 1768966, 1794861, 1773380, 1789651, 1832578, 
+                                                                       1831679, 1858241, 1907086, 1971468, 2028717, 2009389, 1982917, 
+                                                                       1951379, 1930178, 1903234, 1901014, 1895298, 1925348, 1932563, 
+                                                                       1981845, 1968011, 1963747)), .Names = c("year", "boys", "girls"
+                                                                       ), row.names = c(NA, 63L), class = "data.frame")
+str(present)
+```
+
+
+### QUESTION1: What years are included in this data set? What are the dimensions of the data frame and what are the variable or column names?
+
+ANSWER: The data covers 63 years, from 1940 to 2002. There are 63 cases with 3 variables, or a dimension of 63x3. The column names are "year", "boys", and "girls".
+
+    
+```{r}
+print(c(min(present$year),max(present$year)))
+dim(present)
+names(present)
+```
+
+### QUESTION2: How do these counts compare to Arbuthnot's? Are they on a similar scale?
+
+ANSWER: The quantity of new births is two orders of scale higher than the baptisms logged in the arbuthnot data (1.0 x 10^6 vs. 1.0 x 10^4)
+
+```{r}
+print(c(max(present$boys + present$girls),max(arbuthnot$boys + arbuthnot$girls)))
+```
+
+### QUESTION3: Make a plot that displays the boy-to-girl ratio for every year in the dataset. What do you see? Does Arbuthnot's observation about boys being born in greater proportion than girls hold up in the U.S.? Include the plot in your response.
+
+ANSWER: From this plot, we observe values all greater than 1.0 for all points in the time series, indicating a higher share of boys than girls. The ratio tracks downward closer to equality in numbers over the 60 year period. 
+
+```{r}
+present$bgratio <- present$boys / present$girls
+plot (x = present$year, y = present$bgratio, type = "l")
+```
+
+
+### QUESTION4: In what year did we see the most total number of births in the U.S.?
+
+ANSWER: The max number of children were born in 1961 (4.27 million)
+
+```{r}
+print(present$year[present$boys + present$girls == max(present$boys + present$girls)])
+```
