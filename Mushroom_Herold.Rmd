@@ -1,0 +1,77 @@
+---
+title: "MushroomData_Herold"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## DATA 607 - Wk1 Assignment 
+Submitted by Zachary Herold
+
+
+## Loading Data into a Data Frame
+
+First, I load some useful packages. 
+
+```{r libraries, echo = F}
+library(dplyr)
+library(plyr)
+```
+
+## Creating a dataframe from UCI repository dataset
+
+I set the URL of the dataset as a variable, performing the read.csv function on it, before converting the raw data into a dataframe.I wanted to manipulate the data as strings, rather than factors, and so I used lapply, with the argument as.character. I also set stringsAsFactors = F, but I did not test if this has any concrete effect.   
+
+```{r pressure}
+url1 <- "https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data"
+x1 <- read.csv(url1)
+data <- data.frame(lapply(x1,as.character), stringsAsFactors = F)
+str(data)
+```
+
+## Creating the first subset 
+
+Using dpylr's select function with the given headers as arguments, I reduce the dataframe to the columns specifying edible vs. poisonous, cap color, odor, spore print color and habitat, as indicated in the dataset attribution information found at https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.names. 
+
+
+```{r subset1}
+data_sub <- select(data,"p","n","p.1","k.1","u")
+print(head(data_sub))
+```
+
+## Renaming values
+
+I rename the values so that they are no longer abbreviated. For this I use plyr's revalue function. 
+
+```{r rename values}
+data_sub$p <- revalue(data_sub$p, c("e"="edible","p"="poison"))
+data_sub$n <- revalue(data_sub$n, c("n"="brown", "b"="buff","c"="cinnamom","g"="gray","r"="green","p"="pink","u"="purple","e"="red","w"="white","y"="yellow"))
+data_sub$p.1 <- revalue(data_sub$p.1, c("a"="almond","l"="anise","c"="creosote","y"="fishy","f"="foul","m"="musty","n"="none","p"="pungent", "s"="spicy"))
+data_sub$k.1 <- revalue(data_sub$k.1, c("k"="black","n"="brown","b"="buff","h"="chocolate","r"="green","o"="orange","u"="purple","w"="white","y"="yellow"))
+data_sub$u <- revalue(data_sub$u, c("g"="grasses","l"="leaves","m"="meadows","p"="paths","u"="urban","w"="waste","d"="woods"))
+print(head(data_sub))
+```
+
+## Renaming columns
+
+I renamed the columns after the values to keep the code for the previous revaluing as compact as possible.
+
+```{r rename columns}
+colnames(data_sub)[colnames(data_sub) == c("p","n","p.1","k.1","u" )] <- c("poisonous","cap_color","odor","spore_color","habitat")
+print(head(data_sub))
+```
+
+## Sorting the data
+
+As a last step, I filter out all the edible mushrooms, then drop the previous edible vs. poison column by making it NULL. I discover that all the poisonous mushrooms are found in an urban or grasses habitat. So I rearrange the order of the columns, begining with the habitat classifier, and putting the odor last, which is almost always pungent. 
+
+```{r sorting the data}
+data_poison <- filter(data_sub,poisonous =="poison")
+data_poison$poisonous <- NULL
+data_poison <- data_poison[c(4,3,1,2)]
+data_poison_sorted <- arrange(data_poison,habitat,spore_color,cap_color)
+head(data_poison_sorted) 
+```
+
