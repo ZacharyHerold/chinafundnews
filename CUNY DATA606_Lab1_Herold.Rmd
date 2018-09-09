@@ -1,0 +1,235 @@
+---
+title: "CUNY DATA 606_Lab1_Herold"
+output: html_document
+---
+
+###### The Behavioral Risk Factor Surveillance System (BRFSS) is an annual telephone survey of 350,000 people in the United States collected by the Centers for Disease Control and Prevention (CDC). As its name implies, the BRFSS is designed to identify risk factors in the adult population and report emerging health trends. For example, respondents are asked about their diet and weekly physical activity, their HIV/AIDS status, possible tobacco use, and even their level of healthcare coverage. 
+
+###### The BRFSS Web site (http://www.cdc.gov/brfss) contains a complete description of the survey, the questions that were asked and even research results that have been derived from the data. This data set is a random sample of 20,000 people from the BRFSS survey conducted in 2000. While there are over 200 questions or variables in this dataset, this data set only includes 9 variables.
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(DATA606)
+library(pander)
+setwd("/Users/ZacharyHerold/Documents/R/win-library/3.5/DATA606/labs/Lab1")
+source("more/cdc.R")
+
+```
+
+
+### 1.  How many cases are there in this data set?  How many variables?  For each variable, identify its data type (e.g. categorical, discrete).
+    
+
+```{r name_of_chunk, fig.height=8, fig.width=12}
+dim(cdc)
+str(cdc)
+```
+
+#### There are 20,000 cases and 9 variables, as indicated by the dimensions function. 
+
+#### Below are the classification of the variables, formatting into tables via the pander package. 
+
+```{r table2, echo=TRUE, message=FALSE, warnings=FALSE, results='asis'}
+
+cdc_var <- data.frame(variable = c("genhlth", "exerany", "hlthplan", "smoke100","height","weight","wtdesire","age","gender"), datatype = c("factor","numeric","numeric","numeric","numeric","integer","integer","integer","factor"), cat_disc = c("categorical","categorical","categorical","categorical","continuous","continuous","continuous","discrete","categorical"))
+pander(cdc_var,style = 'rmarkdown')
+```
+
+
+### 2a.  Create a numerical summary for `height` and `age`, and compute the interquartile range for each. 
+    
+    
+#### A summary of the height data, with the IQR added as a column:
+
+```{r height_info}
+height_summary <- summary(cdc$height)
+height_summary <- t(height_summary)
+height_IQR <- height_summary[5] - height_summary[2]
+height_info <- data.frame(cbind(height_summary,height_IQR))
+height_info
+```
+
+
+#### A summary of the age data, with the IQR added as a column:
+
+```{r age_info}
+age_summary <- summary(cdc$age)
+age_summary <- t(age_summary)
+age_IQR <- age_summary[5] - age_summary[2]
+age_info <- data.frame(cbind(age_summary,age_IQR))
+age_info
+```
+
+
+### 2b. Compute the relative frequency distribution for`gender` and `exerany`. How many males are in the sample? What proportion ofthe sample reports being in excellent health?
+
+
+```{r}
+
+freq_table <- prop.table(table(cdc$gender, cdc$exerany))
+colnames(freq_table) <- c("non-exercisers","exercisers")
+freq_table
+```
+
+
+```{r}
+males_total <- sum(cdc$gender == "m")
+male_exc_health <- sum(cdc$gender == "m" & cdc$genhlth == "excellent")
+males_prop_exc_health <- round(male_exc_health / males_total,4) * 100
+  
+print(paste0("Males in sample: ", males_total))
+print(paste0("Males reporting excellent health: ", male_exc_health))
+print(paste0("Proportion of Males reporting excellent health: ", males_prop_exc_health, "%"))
+```
+
+
+
+### 3a.  What does the mosaic plot reveal about smoking habits and gender?
+
+```{r}
+mosiac <- mosaicplot(table(cdc$gender,cdc$smoke100), main = "Smokers vs. Gender", color = T)
+
+
+```
+#### On the y-axis, the value "0" indicates the subject has smoked less than 100 cigarettes in his or her lifetime. The mosiac plot reveals that a great percentage of females can be so classified. This percentage is 57.6%, as compared to that of males of 47.5%.
+
+```{r}
+
+non_smoker <- c((sum(!cdc$smoke100[cdc$gender == "f"])/ sum(cdc$gender == "f")),
+              (sum(!cdc$smoke100[cdc$gender == "m"])/ sum(cdc$gender == "m")))
+non_smoker
+
+```
+
+### 3b.  Create a new object called `under23_and_smoke` that contains all observations of respondents under the age of 23 that have smoked 100 cigarettes in their lifetime. Write the command you used to create the new object as the answer to this exercise.
+    
+```{r}
+under23_and_smoke <- subset(cdc, cdc$age < 23 & cdc$smoke100 == 1)
+head(under23_and_smoke)
+```
+    
+### 4.  What does this box plot show? Pick another categorical variable from the data set and see how it relates to BMI. List the variable you chose, why you might think it would have a relationship to BMI,  and indicate what the figure seems to suggest. 
+    
+
+```{r boxplot-bmi, eval=TRUE, fig.height=8, fig.width=12}
+cdc$bmi <- (cdc$weight / cdc$height^2) * 703
+boxplot(cdc$bmi ~ cdc$genhlth)
+```
+
+#### This boxplot shows that as subjects considered themselves of worsening ordinal general health, both median BMI increaed and IQR widened.
+
+
+```{r}
+exercisers_bmi <- subset(cdc, cdc$exerany == 1)
+non_exercisers_bmi <- subset(cdc, cdc$exerany == 0)
+
+exercisers_summary <- summary(exercisers_bmi$bmi)
+non_exercisers_summary <- summary(non_exercisers_bmi$bmi)
+x3 <- rbind(exercisers_summary, non_exercisers_summary)
+x3
+```
+
+
+```{r}
+boxplot(cdc$bmi ~ cdc$exerany)
+```
+#### In this case, one would expect that people who exercise (cdc$exerany == 1) have a lower BMI on average than those who do not. 
+
+#### From the boxplot, we observe that the exercisers have a slightly lower medium, and a 3rd Quartile that is much lower.
+
+#### In this case, one would expect that people who exercise (cdc$exerany == 1) have a lower BMI on average than those who do not. The mean BMI is revealed to indeed by higher for non-exercisers, 27.3, versus 26.0 for exercisers.
+
+
+
+# On Your Own
+
+###  Q1: Make a scatterplot of weight versus desired weight. Describe the relationship between these two variables.
+    
+```{r}
+plot(x = cdc$wtdesire, y = cdc$weight, xlim=c(50,350))
+
+```
+  
+```{r}
+reg2 <- lm(wtdesire ~ weight,data=cdc) 
+summary(reg2)
+```
+  
+####  The summary reveals a moderately strong positive correlation with the regression correlation coefficient of 0.639. 
+  
+  
+
+### Q2a: Let's consider a new variable: the difference between desired weight (`wtdesire`) and current weight (`weight`). Create this new variable by  subtracting the two columns in the data frame and assigning them to a new object called `wdiff`.
+    
+    
+```{r}
+cdc$wdiff <- cdc$wtdesire - cdc$weight
+
+reg1 <- lm(bmi ~ wdiff, data=cdc) 
+	with(cdc,plot(bmi, wdiff))
+	abline(h=0)
+```
+    
+
+### Q2b: What type of data is `wdiff`? If an observation `wdiff` is 0, what does this mean about the person's weight and desired weight. What if `wdiff` is positive or negative?
+    
+    
+#### If wdiff equals 0 then the subject's desired weight matches his or her current weight. If it is negative, and current weight exceeds desired weight, they perceive themselves as overweight. If it is positive, they view themselves as underweight and desire to gain weight. 
+    
+    
+### Q3: Describe the distribution of `wdiff` in terms of its center, shape, and spread, including any plots you use. What does this tell us about how people feel about their current weight?
+    
+```{r}
+class(cdc$wdiff)
+summary(cdc$wdiff)
+
+```
+
+#### Both standard measures of center, mean and median, are negative, reflecting that most people view themselves as overweight. That mean is more negative than median suggests that the data is skewed left, with some largely negative values of wdiff. 
+
+```{r}
+hist(cdc$wdiff, breaks = 80)
+```
+
+#### The shape is shown in the histogram above, with a large spike showing that about 8000 or 20000 subjects seeing themselves as slightly overweight. The distribution does not seem symmetric or normal with the scant number of positive wdiff results. 
+
+```{r}
+sd(cdc$wdiff)
+```
+
+
+#### As for spread, IQR is 21 (3rd Quartile - 1st Quartile ) with a standard deviation of 24.05. Clearly those people who regard themselves as severely obese are leading to a widenening of SD as compared to IQR. 
+
+
+### Using numerical summaries and a side-by-side box plot, determine if men tend to view their weight differently than women.
+
+
+```{r}
+men_wdiff_summary <- summary(cdc$wdiff[cdc$gender == "m"])
+women_wdiff_summary <- summary(cdc$wdiff[cdc$gender == "f"])
+wdiff_sum <- rbind(men_wdiff_summary,women_wdiff_summary)
+wdiff_sum
+```
+
+#### From the summary, we can generalize that women generally view themselves to be more pounds overweight than men. For both, weight satisfaction (wdiff=0) is the 3rd Quartile. There is an outlier among the men, in which one man who reported desiring to be 500 pounds heavier is skewing the mean.
+
+
+```{r}
+boxplot(cdc$wdiff ~ cdc$gender)
+```
+    
+
+### Q4: Now it's time to get creative. Find the mean and standard deviation of weight` and determine what proportion of the weights are within one standard deviation of the mean.
+
+```{r}
+prop <- sum((cdc$weight > (mean(cdc$weight) - sd(cdc$weight))) & cdc$weight < (mean(cdc$weight) + sd(cdc$weight)))/20000
+prop2 <- sum((cdc$weight > (mean(cdc$weight) - 2 * sd(cdc$weight))) & cdc$weight < (mean(cdc$weight) + 2 * sd(cdc$weight)))/20000
+data2 <- list(c(mean(cdc$weight)),sd(cdc$weight), prop, prop2)
+data3 <- t(data2)
+colnames(data3) <- c("mean", "sd", "prop w/in 1SD", "prop w/in 2 SD")
+data3
+
+```
+#### The mean is 169.7. The Standard Deviation is 40.1, with 70.76% of cases falling with 1 standard deviation of the mean. 
