@@ -1,0 +1,81 @@
+---
+title: "CUNY DATA 607_Wk2_Herold -- Integrating R and SQL"
+output:
+  html_document:
+    df_print: paged
+---
+
+#### Assignment for Week 2: 
+
+#### Choose six recent popular movies. Ask at least five people that you know (friends, family, classmates, imaginary friends) to rate each of these movie that they have seen on a scale of 1 to 5. Take the results (observations) and store them in a SQL database. Load the information into an R dataframe.
+
+
+##### The following packages are loaded first:
+
+##### - RMySQL
+##### - sqldf
+##### - htmlTable
+##### - downloader
+##### - reshape2
+##### - ggplot2
+
+
+
+```{r packages, ECHO = TRUE, include=FALSE, cache=FALSE}
+require(RMySQL)
+require(dplyr)
+require(sqldf)
+require(ggplot2)
+require(downloader)
+require(htmlTable)
+require(reshape2)
+require(ggplot2)
+```
+
+
+
+To load the SQL data into R, the dbConnect and dbGetQuery functions are used from the RMySQL package. 
+
+A variable, con, set as the DBIConnection object, is returned by dbConnect(). The SQL query language is introduced within the dbGetQuery function. 
+
+```{r loading SQL data, ECHO = TRUE }
+dbname <- "videos"
+dbuser <- "root"
+dbpass <- "elmstreet101"
+dbhost <- "localhost"
+dbport <- 3306
+con <- dbConnect(RMySQL::MySQL(), host=dbhost, port=dbport, dbname=dbname, user=dbuser, password=dbpass)
+
+movie_rate <- dbGetQuery(con, "select critic_ID, critic_name, 1_WW as WonderWoman, 2_BR as BladeRunner2049, 3_PA as War4PlanetApes, 4_AM as AmericanMade, 5_LJ as LastJedi, 6_IT as IT from critic_rate")
+head(movie_rate)
+```
+
+
+
+Numeric summary is provided here:	
+
+```{r summary}
+movie_rate2 <- movie_rate
+summary(movie_rate2)
+```
+
+
+
+A horizontal bar graph shows the frequency of the ratings for each movie as follows:
+
+```{r bar graph}
+bwidth <- 0.5
+df <- data.frame(WW = movie_rate2$WonderWoman, BR = movie_rate2$BladeRunner2049, PA = movie_rate2$War4PlanetApes, AM = movie_rate2$AmericanMade, LJ = movie_rate2$LastJedi, IT = movie_rate$IT)
+ggplot(melt(df), aes(value, fill = variable)) + coord_flip() + geom_histogram(binwidth=bwidth, position = "dodge") + xlab("Movie Ratings") + ylab("Freq") + ggtitle("Movies of 2017")
+```
+
+```{r}
+dbDisconnect(con)
+```
+
+
+Disconnecting from MySQL.
+
+
+
+
