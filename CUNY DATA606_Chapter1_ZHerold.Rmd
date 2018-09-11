@@ -1,0 +1,169 @@
+---
+title: "CUNY DATA606_Ch1_Herold"
+output: html_document
+---
+
+Submitted by Zachary Herold, 9/11/18
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(pander)
+library(readr)
+library(vcd)
+library(ggplot2)
+```
+
+
+## 1.8 Smoking habits of UK residents
+
+(a)	Each row represents one case, or observational unit, of participants in a smoking survey in UK.
+
+(b)	1691 participants were included, as indicated by the final index number on the bottom left of the dataset.
+
+(c)
+```{r}
+```{r message=FALSE, warnings=FALSE, results='asis'}
+
+smoke <- data.frame(variable = c("sex", "age", "marital", "grossIncome","smoke","amtWeekends","amtWeekdays"), datatype = c("categorical","numeric, discrete","categorical","categorical, ordinal","categorical","numeric, discrete","numeric, discrete"))
+pander(smoke,style = 'rmarkdown')
+```
+
+## 1.10 Cheaters, scope of inference
+
+(a) The population of interest presumably is all children between the age of 5 and 15. The sample are the 160 children who participated in the experiment at an Italian summer camp (Bucciol 2008). I would expect this sample of children to contain some degree of bias due to socio-economic factors. 
+
+(b) The results could only be generalized if it was determined that the children involved in the experiment were a fair representation of the overall population. We would need further information on how the children were selected and what kind of summer camp it was (whether its demographic make-up were consistent with the overall popular). The very fact that it is localized to only one region suggests cultural aspects of morality have been ignored.
+
+As an experiment with treatment and control groups, some causality might be inferred to some degree of confidence. The fact that in the treatment group telling the children not to cheat actually resulted in less cheating suggested this action had an effect. However, there seems to be less causality with the boys, who were more likely to ignore the remark in favor of promoting their own self-interest.
+
+
+## 1.28 Reading the paper 
+
+(a)	In observational studies, causality cannot be determined. As stated in the text, there are confounding variables that may be correlated with both the explanatory (smoking) and response (dementia) variables. There is no way to ensure that all possible confounding variables have been examined or measured in an observational study. Simply making the decision to smoke may reveal the onset of early dementia. 
+
+(b)	 Again, causality cannot be confirmed in this observational study. An unbiased experiment would need to be designed in order to make any inference about the direction of correlation between lack of sleep and propensity to bully. That does not mean that a conclusion quantifying the degree of correlation, as with this one, cannot be useful for setting policy.
+
+
+## 1.36 Exercise and mental health
+
+(a)	 A randomized experiment.
+
+(b)	 The treatment group is the half of subjects who were instructed to exercise, while the control group is the half told not to exercise.
+
+(c)	 Yes, groups are stratified, blocked according to age. Within each age group cluster, cases are randomized.
+
+(d)	 No blinding is involved, as the participants are directly told whether to exercise or not. All subjects can ascertain whether they are within the treatment or control group without ambiguity.
+
+(e)	This study would not be valid in establishing any causality between exercise and mental health. There are simply too many factors (i.e genetic factors) that contribute to mental health, such that they cannot be isolated or "controlled away." Because this is an experimental study, its conclusions are not so easily generalized to the population at large. While the experimental subjects were compelled to exercsie or not as part of the experiment conditions, the impetus to exercise among the populace would involve disparate forms of motivation. 
+
+(f) I would likely refuse funding for this experiment, as the Mental Health exam would need to stand up to robust scrutiny of its validity and reliability. It would be troublesome to separate the effect of any actual physical exertion and that of a placebo effect (in which the exerciser carries the assumption that he is supposed to feel better following exercise). As such, the hypothesis would need to be narrowed significantly. 
+
+## 1.48 States scores
+
+```{r}
+stats_exam <- c(57,66,69,71,72,73,74,77,78,78,79,79,81,81,82,83,83,88,89,94)
+summary(stats_exam)
+```
+
+
+```{r}
+boxplot(stats_exam)
+```
+
+
+## 1.50 Mix-and-match
+
+Histogram (a) corresponds to boxplot 2, with center around 60, and a few cases beyond 1.5* IQR (1.5*4=6) from the median.
+Histogram (b) corresponds to boxplot (3) with center around 50 and no outliers according to the formula above. 
+Histogram (c) is a logarithmic shape which corresponds to boxplot (1) where the left skew is apparent by the outliers that occur around 4 and above. 
+
+
+## 1.56 Distibutions and appropriate statistics
+
+(a) In this example, the distribution is skewed right, with outliers in the very high range. These 6-mn-plus houses pull up the mean significantly and the median only slightly. IQR is a more suitable measure of spread as the upper outliers are outside the 3rd Quartile.
+
+(b) In this example, the distribution is symmetric and with a uniform distribution. In this case, there would be no outliers, and the mean and SD are the measures to choose.
+
+(c) The college drinkers distribution might be lognormal with a sudden spike at the age of 21. After 22, the frequency of drinking occurrence will drop off suddenly as most students graduate. Kurtosis
+
+(d) Annual salaries at a Fortune 500 company also have a strong skew to the right with the C-level executives bringing in salaries (and options) at pay ratios 10x that of the average employee. This results in means that do not reflect the average as well as the medians, and SD that are inflated over the IQR.
+
+## 1.70 Heart transplants
+
+
+```{r warning = F}
+heart_transplant <- read.csv("heart_transplant.csv")
+mosiac <- mosaicplot(table(heart_transplant$transplant,heart_transplant$survived), main= "Survivorship vs. Transplant", color = T)
+```
+
+```{r}
+# Chi-sq test
+chisq.test(heart_transplant$transplant,heart_transplant$survived, correct=FALSE)
+```
+
+
+(a) Since we get a p-Value from a Chi-squared test less than the significance level of 0.05, we reject the null hypothesis and conclude that the two variables (treatment & survivorship) are in fact dependent. We have convincing evidence that the survivorship rate is significantly higher than the patients in the control group who did not get the transplant.
+
+
+```{r}
+boxplot(heart_transplant$survtime ~ heart_transplant$transplant, ylab = "Survival Time (days)")
+```
+
+(b) The boxplot suggests that the experiment is highly successful, so much so that the median number of days surviving by the treatment group exceeds the third quartile of the control group. The third quartile of the treatment group exceeds all but one outlier of the control group. 
+
+(c)
+```{r}
+no.treat.dead <- sum(heart_transplant$transplant == "treatment" & heart_transplant$survived != "alive")
+no.treat <- sum(heart_transplant$transplant == "treatment")
+pop1 <- no.treat.dead / no.treat
+print(paste0("The proportion of treatment patients that died: ", round(pop1,2)))
+
+no.control.dead <- sum(heart_transplant$transplant == "control" & heart_transplant$survived != "alive")
+no.control <- sum(heart_transplant$transplant == "control")
+pop2 <- no.control.dead / no.control
+print(paste0("The proportion of control patients that died: ", round(pop2,2)))  
+
+prop <- prop.table(table(heart_transplant$transplant,heart_transplant$survived))
+prop
+
+```
+
+(d.i) The claims being tested are: 
+
+The Null Hypothesis is that the difference between the percentage of treatment patients still alive and the percentage of control patients still alive (.35-.12 = .23) is due to chance, and that prop.treatment.alive - prop.control.alive is equal to zero.
+The Alternative Hypothsis is that the difference between the proportion of surviving patients is non-zero, showing evidence of effectiveness or negative effect of the treatment.
+
+(d.ii) Blanks are filled in as follows:
+
+```{r}
+print(paste0("Survivin patients: ", sum(heart_transplant$survived == "alive")))
+print(paste0("Non-surviving patients: ",sum(heart_transplant$survived != "alive")))
+print(paste0("Treatment cases: ",sum(heart_transplant$transplant == "treatment")))
+print(paste0("Control cases: ",sum(heart_transplant$transplant != "treatment")))
+
+prop_diff <- NULL
+prop_transplant_alive <- NULL
+prop_control_alive <- NULL
+
+for (j in 1:100){
+v <- rep(c("alive", "dead"), times = c(28,75))
+sample_v <- sample(v)
+sample_transplant <- sample_v[1:69]
+sample_control <- sample_v[70:103]
+prop_transplant_alive[j] <- sum(sample_transplant == "alive")/69
+prop_control_alive[j] <- sum(sample_control == "alive")/34
+prop_diff[j] <- prop_transplant_alive[j] - prop_control_alive[j]
+}
+print(paste0("Mean of simulation (100 times): ", round(mean(prop_diff),5)))
+print(paste0("Probability of simulation occurrence: ", sum(prop_diff > .23) / 100))
+
+```
+
+
+```{r}
+prop_diff <- data.frame(prop_diff)
+ggplot(prop_diff, aes(x = prop_diff)) + geom_dotplot()
+```
+
+Viewing the histogram, the simulation appears to be centered close to 0.0. As such, the Stanford Transplant Study, which resulted in a 23% increase in survivorship, suggests that the treatment results could not have in all likelihood be attributable to chance. 
