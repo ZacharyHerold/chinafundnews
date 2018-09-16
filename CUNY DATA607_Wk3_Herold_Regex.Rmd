@@ -1,0 +1,136 @@
+---
+title: "CUNY DATA607_Wk3_Herold_Regex"
+output: html_document
+---
+
+## Automated Data Collection with R  (p. 217) 8.3
+
+Using Stringr package. 
+
+
+```{r}
+library(stringr)
+raw.data <- "555-1239Moe Szyslak(636) 555-0113Burns, C. Montgomery555-6542Rev.Timothy Lovejoy555 8904Ned Flanders636-555-3226Simpson,Homer5553642Dr. Julius Hibbert"
+
+name <- unlist(str_extract_all(raw.data, "[[:alpha:]., ]{2,}"))
+
+# Add spaces after periods and commas to later help with extracting
+name <- str_replace(name, pattern = "\\.", replacement = ". ")
+name <- str_replace(name, pattern = ",", replacement = ", ")
+
+name
+```
+```{r}
+df <- data.frame(name = name, stringsAsFactors = F)
+df
+```
+
+
+Determining if the name has a title.
+
+```{r}
+## Removing the presumed titles from the names
+df$temp.name <- str_remove(name, "[[:alpha:]]{2,}\\.")
+
+## Check for periods after 2+ letters to signal titles
+has.title <- str_detect(name, "[[:alpha:]]{2,}\\.")
+
+## Add has.title column to dataframe
+df <- data.frame(df, has.title = has.title)
+
+df
+```
+
+To separate the first and last names, we need to detect if there are any commas, which would change the regular order of First, then Last, name.
+
+
+
+```{r separation of names with commas}
+df$has.comma <- NULL
+
+## Check for commas for last names first
+df$has.comma <- str_detect(df$temp.name, ",")
+
+df
+```
+
+Now, we extract out the parts of temp.name, filling into the first_name and last_name fields depending on the Boolean of whether or not there was a comma in the name. Last name first. 
+
+```{r}
+df$last_name <- NULL
+df$last_name[df$has.comma == TRUE] <- unlist(str_extract_all(df$temp.name[df$has.comma == TRUE], "^[[:alpha:]]{2,}"))
+df$last_name[df$has.comma == FALSE] <- unlist(str_extract_all(df$temp.name[df$has.comma == FALSE], "[[:alpha:]]{2,}$"))
+df$last_name
+```
+
+Then first names, after they have been padded. 
+
+```{r}
+## Need to remove padding of temp.names first
+df$temp.name <- str_trim(df$temp.name, side = "both")
+
+df$first_name <- NULL
+df$first_name[df$has.comma == TRUE] <- unlist(str_extract_all(df$temp.name[df$has.comma == TRUE], "[[:alpha:][.][:blank:]]{2,}$"))
+df$first_name[df$has.comma == FALSE] <- unlist(str_extract_all(df$temp.name[df$has.comma == FALSE], "^[[:alpha:]]{2,}"))
+
+##  I recognize that I did not generalize in the period issue in the first name, coding for C. Montgomery in this problem. I think of the problems that "St." and "Jr." must cause. 
+df2 <- data.frame(df$name,df$first_name,df$last_name,df$has.title)
+df2
+
+```
+
+Trimming the first names again, then detecting for spaces to indicate two names. 
+
+
+```{r}
+df$first_name <- unlist(str_trim(df$first_name, side = "both"))
+df2$is.twonames <- unlist(str_detect(df$first_name, " "))
+df2
+
+```
+
+Another problem would be determining if, given three names, a second name should be part of the first or last.
+
+
+## Automated Data Collection with R  (p. 217) 8.4
+
+## [0-9]+\\$
+
+```{r}
+rawdata1 <- c("999$", "2222$", "333")
+unlist(str_extract_all(rawdata1, "[0-9]+\\$"))
+```
+
+## \\b[a-z]{1,4}\\b
+
+```{r}
+rawdata2 <- c("man","bird","Way")
+unlist(str_extract_all(rawdata2, "\\b[a-z]{1,4}\\b"))
+```
+
+## .*?\\.txt$
+
+```{r}
+rawdata3 <- c(".txt","wow.dog.txt", "tree.look.txt2")
+unlist(str_extract_all(rawdata3, ".*?\\.txt$"))
+```
+
+## \\d{2}/\\d{2}/\\d{4}
+
+```{r}
+rawdata4 <- c("22/09/1976","65/33/9999", "653.33/8888")
+unlist(str_extract_all(rawdata4, "\\d{2}/\\d{2}/\\d{4}"))
+```
+
+## <(.+?)>.+?</\\1>
+
+```{r}
+rawdata5 <- c("<d> </d>","<meta> weep </meta>","giant")
+unlist(str_extract_all(rawdata5, "<(.+?)>.+?</\\1>"))
+```
+
+
+
+
+
+
