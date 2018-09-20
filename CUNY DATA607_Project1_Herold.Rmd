@@ -1,0 +1,193 @@
+---
+title: "CUNY DATA607_Wk3_Herold_Chess"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Project 1: Wrangling data from a Chess Tournament Cross Table
+## Zachary Herold, Submitted 9/20/18
+
+
+```{r}
+library(stringr)
+
+chess <- NULL
+opponents.rating.matrix <- NULL
+```
+
+Loading the Chess Tournament Cross Table from the Raw Github URL. Removing the dash lines, with solution by redmode. See: https://stackoverflow.com/questions/21114598/importing-a-text-file-into-r
+
+
+```{r}
+url <- "https://raw.githubusercontent.com/ZacharyHerold/chinafundnews/master/tournamentinfo.txt"
+
+lines <- readLines(url)
+
+lines <- sapply(lines, gsub, pattern="[-]{2,}|[|]", replacement="")
+lines <- c(lines[2], lines[lines!="" & lines!=lines[2]])
+
+head(lines)
+
+```
+
+Extracting out the names with alphabetic characters, allowing for multiple names. 
+
+```{r}
+name <- unlist(str_extract_all(lines, "[[:alpha:]]{2,}([[:blank:]][[:alpha:]]{1,}){1,}"))
+
+name <- name[-c(1,2)]
+name
+```
+
+Trimming the lines and taking the first two characters, then subsetting out the strings of two alphabetic characters, indicating the state abbreviations. As with name, removing the first two rows.
+
+```{r}
+trim_lines <- str_trim(lines, side = "both")
+state_collect <-  str_sub(trim_lines, start = 1, end = 2)
+state <- unlist(str_extract_all(state_collect, "[[:alpha:]]{2}"))
+state <- state[-c(1,2)]
+state
+
+
+```
+
+Checking the length of the state vector.
+
+```{r}
+length(state)
+```
+
+Separating out the digits divided by a decimal point. 
+
+```{r}
+points <- unlist(str_extract_all(lines, "[[:digit:]]\\.[[:digit:]]"))
+```
+
+```{r}
+length(points)
+```
+
+
+The "R: " characters indicate the player's ratings. 
+
+```{r}
+pre_ratings <- unlist(str_extract_all(lines, "R:( ){1,2}[[:digit:]]{3,4}"))
+pre_ratings <- unlist(str_extract_all(pre_ratings, "[[:digit:]]{3,4}"))
+pre_ratings
+```
+
+```{r}
+length(pre_ratings)
+```
+
+COnstructing the chess dataframe.
+
+```{r}
+chess <- data.frame(name, ST = state, points, pre_ratings, stringsAsFactors = FALSE)
+head(chess)
+```
+
+Retrieving the contest outcome and opponent., looking for Wins ("W"), Losses ("L"), or Draws ("D").
+
+```{r}
+results <- unlist(str_extract_all(lines, "[WLD][[:blank:]]{2,3}[[:digit:]]{0,2}"))
+results
+```
+
+With 64 players and 7 rounds, there should be 448 total scores. Checking the data, should remove the "W" followed by blanks with no opponent number.
+
+```{r}
+length(results)
+
+64 * 7
+```
+
+```{r}
+results.raw <- subset(results, results != "W   ")
+length(results.raw)
+```
+
+Just one short. Finding the abberation. The one "B" in line 75.
+
+```{r}
+lines[75:77]
+```
+
+
+```{r}
+results <- unlist(str_extract_all(lines, "[WLDUH][[:blank:]]{2,3}[[:digit:]]{0,2}"))
+results.raw <- subset(results, results != "W   ")
+results.raw
+```
+
+
+```{r}
+length(results.raw)
+```
+
+Manually discovering that the extra "B" is in position 408, then inserting it. Would be nice to automate this process somehow. 
+
+```{r}
+results.raw <- c(results.raw[1:407],"B", results.raw[408:length(results.raw)])
+length(results.raw) 
+
+```
+
+From the results vector, removing the result so that only the opponent number remains. 
+
+```{r}
+opponents <- NULL
+
+opponents <- ifelse(str_detect(results.raw, "[[:digit:]]{1,2}"), unlist(str_extract_all(results.raw, "[[:digit:]]{1,2}")), NA)
+opponents
+
+```
+
+
+Checking the class of the variable opponents. Finding it is a character, converting that to a numeric.
+
+
+```{r}
+class(opponents)
+opponents <- as.numeric(opponents)
+class(opponents)
+```
+
+Creating an opponents matrix, with 64 rows for the players and 7 columns for the rounds.
+
+```{r}
+opponents.mat <- matrix(opponents, nrow = 64, ncol = 7, byrow = TRUE)
+opponents.mat
+```
+
+Replacing the player ID with their ratings, again ensuring it is a numeric value. The matrix is dissolved. 
+
+```{r}
+opponents.rating <- as.numeric(pre_ratings[opponents])
+opponents.rating
+```
+
+Restructuring the opponent ratings into a matrix. 
+
+```{r}
+opponents.rating.matrix <- matrix(opponents.rating, nrow = 64, ncol = 7, byrow = TRUE)
+opponents.rating.matrix
+```
+
+Taking the mean of the matrix to find the average rating of opponents, after removing the NA values.
+
+```{r}
+chess$opponents.rating <- round(rowMeans(opponents.rating.matrix, na.rm = T, dims = 1))
+chess
+```
+
+Finally, capturing the data into a csv file. 
+
+```{r}
+write.csv(chess, file = "chess.csv")
+```
+
+
