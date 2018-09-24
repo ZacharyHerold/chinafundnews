@@ -1,0 +1,256 @@
+---
+title: "Probability"
+output:
+  html_document:
+    theme: cerulean
+    highlight: pygments
+    css: ./lab.css
+---
+
+## DATA606, Lab 2, Zachary Herold
+
+##Hot Hands
+
+Our investigation will focus on the performance of one player: Kobe Bryant of 
+the Los Angeles Lakers. His performance against the Orlando Magic in the 2009 
+NBA finals earned him the title *Most Valuable Player* and many spectators 
+commented on how he appeared to show a hot hand. Let's load some data from those
+games and look at the first several rows.
+
+```{r load-data, eval=TRUE}
+load("more/kobe.RData")
+head(kobe)
+```
+
+In this data frame, every row records a shot taken by Kobe Bryant. If he hit the
+shot (made a basket), a hit, `H`, is recorded in the column named `basket`, 
+otherwise a miss, `M`, is recorded.
+
+Just looking at the string of hits and misses, it can be difficult to gauge 
+whether or not it seems like Kobe was shooting with a hot hand. One way we can 
+approach this is by considering the belief that hot hand shooters tend to go on 
+shooting streaks. For this lab, we define the length of a shooting streak to be 
+the *number of consecutive baskets made until a miss occurs*.
+
+For example, in Game 1 Kobe had the following sequence of hits and misses from 
+his nine shot attempts in the first quarter:
+
+\[ \textrm{H M | M | H H M | M | M | M} \]
+
+To verify this use the following command:
+
+```{r first9, eval=TRUE}
+kobe$basket[1:9]
+```
+
+Within the nine shot attempts, there are six streaks, which are separated by a 
+"|" above. Their lengths are one, zero, two, zero, zero, zero (in order of 
+occurrence).
+
+1.  What does a streak length of 1 mean, i.e. how many hits and misses are in a 
+    streak of 1? What about a streak length of 0?
+    
+  Streak length of 1 means Kobe misses his shot after making one only {(M)HM sequence.}
+  Streak length of 0 means Kobe misses his shot after missing the previous shot (M)M sequence.}  
+
+The custom function `calc_streak`, which was loaded in with the data, may be 
+used to calculate the lengths of all shooting streaks and then look at the 
+distribution.
+
+```{r calc-streak-kobe, eval=TRUE}
+kobe_streak <- calc_streak(kobe$basket)
+barplot(table(kobe_streak))
+```
+
+
+2.  Describe the distribution of Kobe's streak lengths from the 2009 NBA finals. 
+    What was his typical streak length? How long was his longest streak of baskets?
+    
+    
+    Follows a lognormal distribution, with mean greater than 0 and less than 1, and with no results less than 0.
+    The longest streak of baskets was 4 in a row before missing. 
+    
+```{r}
+print(paste0("Kobe's typical ('mean') streak is: ", round(mean(kobe_streak),2)))
+print(paste0("Kobe's max streak is: ", max(kobe_streak)))
+```
+    
+
+## Simulations in R
+
+While we don't have any data from a shooter we know to have independent shots, 
+that sort of data is very easy to simulate in R. In a simulation, you set the 
+ground rules of a random process and then the computer uses random numbers to 
+generate an outcome that adheres to those rules. As a simple example, you can
+simulate flipping a fair coin with the following.
+
+```{r head-tail, eval=TRUE}
+outcomes <- c("heads", "tails")
+sample(outcomes, size = 1, replace = TRUE)
+```
+
+To view the results of this simulation, type the name of the object and then use
+`table` to count up the number of heads and tails.
+
+```{r table-sim-fair-coin, eval=TRUE}
+sim_fair_coin <- sample(outcomes, size = 100, replace = TRUE)
+sim_fair_coin
+table(sim_fair_coin)
+```
+
+
+
+3.  In your simulation of flipping the unfair coin 100 times, how many flips 
+    came up heads?
+
+```{r}
+sim_unfair_coin <- sample(outcomes, size = 100, replace = TRUE, prob = c(0.2, 0.8))
+sim_unfair_coin
+table(sim_unfair_coin)
+```
+
+
+## Simulating the Independent Shooter
+
+4.  What change needs to be made to the `sample` function so that it reflects a 
+    shooting percentage of 45%? Make this adjustment, then run a simulation to 
+    sample 133 shots. Assign the output of this simulation to a new object called
+    `sim_basket`.
+
+```{r sim-basket, eval=TRUE}
+outcomes <- c("H", "M")
+sim_basket <- sample(outcomes, size = 133, replace = TRUE, prob = c(0.45,0.55))
+sim_basket
+table(sim_basket)
+```
+
+
+```{r compare-basket, eval=TRUE}
+table(kobe$basket)
+table(sim_basket)
+```
+
+
+* * *
+
+## On your own
+
+### Comparing Kobe Bryant to the Independent Shooter
+
+Using `calc_streak`, compute the streak lengths of `sim_basket`.
+
+-   Describe the distribution of streak lengths. What is the typical streak 
+    length for this simulated independent shooter with a 45% shooting percentage?
+    How long is the player's longest streak of baskets in 133 shots?
+    
+```{r}
+calc_streak(sim_basket)
+```
+  
+
+-   If you were to run the simulation of the independent shooter a second time, 
+    how would you expect its streak distribution to compare to the distribution 
+    from the question above? Exactly the same? Somewhat similar? Totally 
+    different? Explain your reasoning.
+    
+```{r}
+longest.stk <- NULL
+avg.stk <- NULL
+
+for(i in 1:1){
+  outcomes <- c("H", "M")
+  sim_basket <- sample(outcomes, size = 133, replace = TRUE, prob = c(0.45,0.55))
+  r <- calc_streak(sim_basket)
+  longest.stk[i] <- max(r)  
+  avg.stk[i] <- mean(r)
+  }
+
+
+mean(longest.stk) 
+mean(avg.stk)     
+```
+    
+The following barplot of one simulation reveals the occasional streaks of 5 or 6, more than any streak in Kobe's final performance.    
+    
+```{r}
+barplot(table(calc_streak(sim_basket)))
+```
+
+
+
+When simulated 10,000 times, the typical streak is shown to be 0.8 makes for the non-hot-hand shooter, with the longest streak of 5.6 on average.     
+    
+```{r}
+for(i in 1:10000){
+  outcomes <- c("H", "M")
+  sim_basket <- sample(outcomes, size = 133, replace = TRUE, prob = c(0.45,0.55))
+  r <- calc_streak(sim_basket)
+  longest.stk[i] <- max(r)  
+  avg.stk[i] <- mean(r) }
+
+mean(longest.stk) 
+mean(avg.stk)    
+
+```
+    
+The typical streak (after 10,000 simulations) visualized in a histogram.     
+    
+```{r}
+hist(avg.stk)
+```
+    
+The longest streak (after 10,000 simulations) visualized in a histogram.     
+
+```{r}
+hist(longest.stk)
+```
+    
+
+-   How does Kobe Bryant's distribution of streak lengths compare to the 
+    distribution of streak lengths for the simulated shooter? Using this 
+    comparison, do you have evidence that the hot hand model fits Kobe's 
+    shooting patterns? Explain.
+    
+    
+Kobe's longest streak was 4, with an average of 0.76. 
+    
+```{r}
+q <- calc_streak(kobe$basket)
+kobe.longest.stk = max(q)  
+kobe.avg.stk = mean(q) 
+
+kobe.longest.stk
+kobe.avg.stk 
+```
+    
+There were only 391 cases out of 10,000 in which there was a shorter longest streak than Kobe's. 
+
+```{r}
+sum(longest.stk >= 1 & longest.stk <= 3)
+```
+
+
+Compared to Kobe's high of 4 in a row, a simulated independent shooter appears to produce longer streaks after 133 shots.
+
+```{r}
+head(longest.stk,30)
+```
+  
+Kobe's performance is a below-average one, even for an independent shooter.     
+    
+```{r}
+print(paste0("Percentage of independent simulations that had a longer streak: ", (sum(longest.stk > kobe.longest.stk) / 10000)))
+print(paste0("Percentage of independent simulations that had a higher mean: ", (sum(avg.stk > kobe.avg.stk) / 10000)))
+
+```
+    
+If Kobe evidenced a hot-hand, his streaks on average would be longer, with more lengthy strings of makes. The fact they were not suggests a hot hand (60% make-rate after make) does not apply to his Finals case.
+    
+  
+
+<div id="license">
+This is a product of OpenIntro that is released under a 
+[Creative Commons Attribution-ShareAlike 3.0 Unported](http://creativecommons.org/licenses/by-sa/3.0). 
+This lab was adapted for OpenIntro by Andrew Bray and Mine &Ccedil;etinkaya-Rundel
+from a lab written by Mark Hansen of UCLA Statistics.
+</div>
