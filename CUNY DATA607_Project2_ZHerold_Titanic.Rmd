@@ -1,0 +1,138 @@
+---
+title: "CUNY DATA607_Project2_ZHerold_Titanic"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Exploring Class's Impact on Survival Rate on the Titanic
+
+It seems my own discovery of this dataset coincided with a classmate, Henry Vasquez. The questions I posed to the data are as follows:
+
+(1) One would expect that the wealthy passengers of the Titanic were able to make their way to safety at a more successful rate than those of lower classes. Was there indeed a decreasing survival rate by descending cabin class, as one might skeptically suppose?
+
+(2) One would also expect that the crew would be selfless and give passengers priority to disembark into the safety vessels. Did women crew members fare worse than the fare-paying females?  
+
+(3) We all know the motto of "Women and Children First," but did that rule apply evenly across the classes?
+
+(4) Did men in first class actually survive at a higher rate than women in 3rd Class?
+
+
+```{r, message=FALSE}
+library(datasets)
+library(dplyr)
+library(ggplot2)
+```
+
+
+Loading and inspecting the structure of the Titanic dataset. Notice that the attributes are already defined as characters, so no need for stringsasFactors = FALSE argument in the dataframe.  
+
+```{r}
+data(Titanic)
+str(Titanic)
+```
+
+
+```{r}
+df <- data.frame(Titanic)
+tail(df)
+```
+
+First I calculate the overall Survivorship Rate using sums. A higher-than-expected 32.3% of passengers survived. 
+
+
+```{r}
+no.passengers <- sum(df$Freq)
+no.survivors <- sum(df$Freq[df$Survived == "Yes"])
+survivor.rate <- no.survivors / no.passengers
+
+no.passengers 
+no.survivors
+survivor.rate
+```
+
+73.2% of Women and 52.3% of Children made it off the sinking barge safely. 
+
+
+```{r}
+women.surv.rate <- sum(df$Freq[df$Sex == "Female" & df$Survived == "Yes"]) / sum(df$Freq[df$Sex == "Female"])
+child.surv.rate <- sum(df$Freq[df$Age == "Child"& df$Survived == "Yes"]) / sum(df$Freq[df$Age == "Child"])
+
+women.surv.rate
+child.surv.rate 
+```
+
+
+
+Now, I begin to look at survival rates by Cabin Class. 1st class passengers survived at 62.5%, nearly double the average, which each class showing a steady drop-off. Indeed the crew, the largest group, were the least likely to survive at around 24.0%. 
+
+```{r pressure, echo=FALSE}
+df.all <- df %>% 
+  group_by(Class) %>% 
+  summarise(No = sum(Freq[Survived == "No"]), Yes = sum(Freq[Survived == "Yes"])) %>% 
+  mutate(total = No + Yes, surv.rate = Yes/ (No + Yes))
+df.all
+```
+
+Children of the 1st and 2nd classes did entirely get off safely. 3rd Class children only fared slightly better than the overall average. Was this because their cabins were too far beneath the levels of the deck?  Crew did not bring children fortunately. 
+
+```{r}
+df.child <- subset(df, Age == "Child")
+
+df.child <- df.child %>% 
+  group_by(Class) %>% 
+  summarise(No = sum(Freq[Survived == "No"]), Yes = sum(Freq[Survived == "Yes"])) %>% 
+  mutate(total = No + Yes, surv.rate = Yes/ (No + Yes))
+
+df.child
+```
+
+First class ladies almost entirely survived, but for four. 2nd class did marginally worse, at the same level as the Crew Stewardesses. However, more 3rd class women died then lived that April 15, 1912. 
+
+```{r}
+df.women <- subset(df, Sex == "Female")
+
+df.women <- df.women %>% 
+  group_by(Class) %>% 
+  summarise(No = sum(Freq[Survived == "No"]), Yes = sum(Freq[Survived == "Yes"]))  %>% 
+  mutate(total = No + Yes, surv.rate = Yes/ (No + Yes))
+
+df.women
+```
+
+As for men, the pattern nearly holds, except that one discovers that 3rd Class Men did actually better than 2nd Class ones. A case of Nice Guys Finishing Last? The Crew Men seemed to have a secret way off that the non-elite couldn't quite afford?
+
+
+```{r}
+df.men <- subset(df, Sex == "Male")
+
+df.men <- df.men %>% 
+  group_by(Class) %>% 
+  summarise(No = sum(Freq[Survived == "No"]), Yes = sum(Freq[Survived == "Yes"]))  %>% 
+  mutate(total = No + Yes, surv.rate = Yes/ (No + Yes))
+
+df.men
+```
+
+The full picture:
+
+```{r}
+
+survivor <- data.frame(All = df.all$surv.rate, Men = df.men$surv.rate, Women = df.women$surv.rate, Child = df.child$surv.rate)
+labels <- c("1st","2nd","3rd","Crew")
+row.names(survivor) <- labels
+survivor
+```
+
+```{r}
+
+colours <- c("red", "orange", "blue", "yellow")
+
+barplot(as.matrix(survivor), main="Survival Rates Aboard the Titanic", ylab = "Percent", cex.lab = 1.5, cex.main = 1.4, beside=TRUE, col=colours)
+
+legend("topleft", labels, cex=1.3, bty="n", fill=colours)
+
+```
+
